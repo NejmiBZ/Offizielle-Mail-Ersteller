@@ -2,406 +2,1105 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brief-Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Glasfaser Hausbegehung</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; overflow: hidden; -webkit-font-smoothing: antialiased; }
+        body { display: flex; flex-direction: column; }
+        .header { background: white; padding: 14px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; z-index: 100; }
+        .header-title { font-size: 18px; font-weight: 700; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; -webkit-user-select: none; user-select: none; }
+        .btn { padding: 10px 16px; }
+        .btn-primary { background: linear-gradient(135deg, #007AFF, #0051D5); color: white; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-success { background: linear-gradient(135deg, #34C759, #22863A); color: white; box-shadow: 0 2px 8px rgba(52,199,89,0.3); }
+        .btn-success:active { transform: scale(0.97); }
+        .btn-danger { background: linear-gradient(135deg, #FF3B30, #C41F0A); color: white; box-shadow: 0 2px 8px rgba(255,59,48,0.3); }
+        .btn-secondary { background: white; color: #007AFF; border: 2px solid #007AFF; padding: 8px 12px; }
+        .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 10px; justify-content: center; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #statusBar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 1000; display: none; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .status-success { background: #d4edda; color: #155724; display: block !important; }
+        .status-error { background: #f8d7da; color: #721c24; display: block !important; }
+        .status-info { background: #d1ecf1; color: #0c5460; display: block !important; }
+        .main-container { flex: 1; display: flex; overflow: hidden; }
+        .toolbar { width: 240px; background: white; border-right: 1px solid #e5e5e7; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+        .tool-section { display: flex; flex-direction: column; gap: 8px; }
+        .tool-section-title { font-weight: 700; font-size: 11px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px; }
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .tool-grid-single { display: grid; grid-template-columns: 1fr; gap: 6px; }
+        .tool-btn { padding: 10px 8px; font-size: 12px; border: 1.5px solid #e5e5e7; border-radius: 8px; background: white; cursor: pointer; transition: all 0.15s; font-weight: 600; color: #1a1a1a; text-align: center; -webkit-user-select: none; user-select: none; }
+        .tool-btn:active { transform: scale(0.95); background: #f0f8ff; border-color: #007AFF; }
+        .number-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .number-btn { padding: 8px 0 !important; font-size: 14px !important; font-weight: 700 !important; }
+        .canvas-area { flex: 1; overflow-y: auto; padding: 20px; background: #f0f2f5; -webkit-overflow-scrolling: touch; }
+        .image-card { background: white; border-radius: 16px; margin-bottom: 24px; padding: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s; }
+        .image-card.dragging { opacity: 0.5; transform: scale(0.98); }
+        .image-card.drag-over-top { border-top: 4px solid #007AFF; }
+        .image-card.drag-over-bottom { border-bottom: 4px solid #007AFF; }
+        .image-card.active-image { border: 3px solid #007AFF; }
+        .image-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e5e7; }
+        .image-card-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: #1a1a1a; }
+        .image-number-badge { width: 32px; height: 32px; background: linear-gradient(135deg, #007AFF, #0051D5); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+        .image-card-actions { display: flex; gap: 6px; }
+        .image-card-canvas-wrapper { position: relative; background: #f5f5f7; border-radius: 12px; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 200px; }
+        canvas { max-width: 100%; height: auto; display: block; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: crosshair; }
+        canvas.eraser-mode { cursor: not-allowed; }
+        .image-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e5e7; font-size: 12px; color: #8e8e93; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; color: #8e8e93; }
+        .empty-state h2 { font-size: 22px; margin-bottom: 8px; color: #1a1a1a; }
+        .empty-state p { font-size: 15px; margin-bottom: 20px; max-width: 400px; }
+        .empty-icon { font-size: 60px; margin-bottom: 16px; opacity: 0.4; }
+        .drag-handle { cursor: grab; padding: 4px 10px; color: #8e8e93; font-size: 22px; font-weight: bold; touch-action: none; -webkit-user-select: none; user-select: none; }
+        .drag-handle:active { cursor: grabbing; }
+        @media (max-width: 900px) {
+            .toolbar { width: 200px; padding: 12px; }
+            .tool-btn { font-size: 11px; padding: 8px 4px; }
         }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        @media (max-width: 700px) {
+            .main-container { flex-direction: column; }
+            .toolbar { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid #e5e5e7; flex-direction: row; overflow-x: auto; }
+            .tool-section { min-width: 160px; }
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .panel {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="date"],
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: Arial, sans-serif;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus,
-        input[type="date"]:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .recipient-fields input {
-            margin-bottom: 10px;
-        }
-
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-right: 10px;
-        }
-
-        button:hover {
-            background: #5568d3;
-        }
-
-        .preview-panel {
-            position: sticky;
-            top: 20px;
-        }
-
-        #preview {
-            background: white;
-            padding: 0;
-            border: 1px solid #ddd;
-            min-height: 500px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-
-        .a4-page {
-            width: 210mm;
-            height: 297mm;
-            background: white;
-            position: relative;
-            margin: 0 auto;
-            transform: scale(0.7);
-            transform-origin: top center;
-        }
-
-        .sender-line {
-            position: absolute;
-            top: 45mm;
-            left: 25mm;
-            font-size: 7pt;
-            width: 85mm;
-            color: #555;
-            font-family: Arial, sans-serif;
-        }
-
-        .recipient {
-            position: absolute;
-            top: 55mm;
-            left: 25mm;
-            width: 85mm;
-            font-size: 11pt;
-            line-height: 1.6;
-            font-family: Arial, sans-serif;
-        }
-
-        .recipient-name {
-            font-weight: bold;
-        }
-
-        .content {
-            position: absolute;
-            top: 105mm;
-            left: 25mm;
-            right: 20mm;
-            width: 165mm;
-            font-family: Arial, sans-serif;
-            font-size: 11pt;
-        }
-
-        .date {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-
-        .subject {
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .salutation {
-            margin: 20px 0 15px 0;
-        }
-
-        .body-text {
-            text-align: justify;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .closing {
-            margin-top: 30px;
-            margin-bottom: 60px;
-        }
-
-        .signature {
-            margin-top: 10px;
-        }
-
-        .info-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 13px;
-        }
-
-        @media print {
-            body {
-                background: white;
-            }
-            .panel:first-child,
-            button {
-                display: none;
-            }
-            .container {
-                grid-template-columns: 1fr;
-            }
-            .a4-page {
-                transform: scale(1);
-                box-shadow: none;
-                border: none;
-            }
-        }
-
-        @media (max-width: 1200px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-            .preview-panel {
-                position: relative;
-            }
+        @supports (-webkit-touch-callout: none) {
+            canvas { touch-action: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Eingabeformular -->
-        <div class="panel">
-            <h1>📝 Brief-Generator</h1>
-            
-            <div class="info-box">
-                ✨ Ihre Adresse bleibt fest. Ändern Sie nur den Empfänger und Inhalt. Das Datum wird automatisch auf heute gesetzt.
-            </div>
+    <header class="header">
+        <div class="header-title">
+            <span style="font-size: 22px;">🌐</span>
+            <span>Glasfaser Hausbegehung</span>
+        </div>
+        <div class="header-actions">
+            <input type="file" id="imageUpload" multiple accept="image/*,application/json" style="display: none;">
+            <button class="btn btn-primary" onclick="document.getElementById('imageUpload').click()">📸 Bilder hochladen</button>
+            <button class="btn btn-success" onclick="exportAllAsZip()">📥 ZIP exportieren</button>
+            <button class="btn btn-danger" onclick="clearAllImages()">🗑️ Alle löschen</button>
+        </div>
+    </header>
 
-            <div class="form-group">
-                <label>📅 Datum (automatisch auf heute)</label>
-                <input type="date" id="dateInput">
-            </div>
+    <div id="statusBar"></div>
 
-            <h2>Empfänger</h2>
-            <div class="recipient-fields">
-                <div class="form-group">
-                    <label>Komplette Empfängeradresse (jede Zeile = neue Zeile)</label>
-                    <textarea id="recipientAddress" rows="6" placeholder="An das
-Amtsgericht Augsburg
-– Beratungshilfestelle –
-Frohsinnstraße 2
-86150 Augsburg"></textarea>
+    <div class="main-container">
+        <aside class="toolbar">
+            <div class="tool-section">
+                <div class="tool-section-title">🔵 Blaue Linien</div>
+                <div class="tool-grid">
+                    <button class="tool-btn" onclick="addElementToActive('line_blue_yellow')">+ 🟡 Gelb</button>
+                    <button class="tool-btn" onclick="addElementToActive('line_blue_red')">+ 🔴 Rot</button>
                 </div>
             </div>
-
-            <h2>Brief-Inhalt</h2>
-            <div class="form-group">
-                <label>Betreff</label>
-                <input type="text" id="subject" placeholder="Betreff des Briefes">
-            </div>
-
-            <div class="form-group">
-                <label>Brief-Text (Absätze mit Leerzeile trennen)</label>
-                <textarea id="bodyText" placeholder="Schreiben Sie hier Ihren Brief-Text...
-
-Trennen Sie Absätze mit einer Leerzeile.
-
-Mit freundlichen Grüßen"></textarea>
-            </div>
-
-            <button onclick="updatePreview()">🔄 Vorschau aktualisieren</button>
-            <button onclick="window.print()">🖨️ Als PDF drucken</button>
-        </div>
-
-        <!-- Vorschau -->
-        <div class="panel preview-panel">
-            <h1>Vorschau</h1>
-            <div id="preview">
-                <div class="a4-page">
-                    <div class="sender-line">
-                        Nejm Eddine Ben Zaida · Linke Brandstraße 48 · 86167 Augsburg
-                    </div>
-                    
-                    <div class="recipient">
-                        <div class="recipient-name" id="prev-line1">An das</div>
-                        <div class="recipient-name" id="prev-line2">Amtsgericht Augsburg</div>
-                        <div class="recipient-name" id="prev-line3">– Beratungshilfestelle –</div>
-                        <div id="prev-street">Frohsinnstraße 2</div>
-                        <div id="prev-city">86150 Augsburg</div>
-                    </div>
-                    
-                    <div class="content">
-                        <div class="date" id="prev-date">Augsburg, den 09.11.2025</div>
-                        
-                        <div class="subject" id="prev-subject">
-                            Betreff: Nachfrage zum Beratungshilfeantrag
-                        </div>
-                        
-                        <div class="salutation">Sehr geehrte Damen und Herren,</div>
-                        
-                        <div id="prev-body">
-                            <div class="body-text">
-                                Hier kommt Ihr Brief-Text...
-                            </div>
-                        </div>
-                        
-                        <div class="signature">
-                            <br><br>
-                            Nejm Eddine Ben Zaida<br>
-                            (Geburtsdatum: 24.02.1994)
-                        </div>
-                    </div>
+            <div class="tool-section">
+                <div class="tool-section-title">🟣 Lila Linien</div>
+                <div class="tool-grid">
+                    <button class="tool-btn" onclick="addElementToActive('line_purple_yellow')">+ 🟡 Gelb</button>
+                    <button class="tool-btn" onclick="addElementToActive('line_purple_red')">+ 🔴 Rot</button>
                 </div>
             </div>
-        </div>
+            <div class="tool-section">
+                <div class="tool-section-title">⭕ Kreise</div>
+                <div class="tool-grid">
+                    <button class="tool-btn" onclick="addElementToActive('circle_yellow')">🟡 Gelb</button>
+                    <button class="tool-btn" onclick="addElementToActive('circle_red')">🔴 Rot</button>
+                </div>
+            </div>
+            <div class="tool-section">
+                <div class="tool-section-title">⬜ Rechtecke</div>
+                <div class="tool-grid-single">
+                    <button class="tool-btn" onclick="addElementToActive('rect_large_yellow')">🟡 Splitter</button>
+                    <button class="tool-btn" onclick="addElementToActive('gfta_double_red')">🔴 GFTA</button>
+                </div>
+            </div>
+            <div class="tool-section">
+                <div class="tool-section-title">🔢 Nummern</div>
+                <div class="number-grid">
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_1')">1</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_2')">2</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_3')">3</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_4')">4</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_5')">5</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_6')">6</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_7')">7</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_8')">8</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_9')">9</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_10')">10</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_11')">11</button>
+                    <button class="tool-btn number-btn" onclick="addElementToActive('text_number_12')">12</button>
+                </div>
+            </div>
+            <div class="tool-section">
+                <div class="tool-section-title">✍️ Beschriftungen</div>
+                <div class="tool-grid-single">
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_eg')">Zu EG</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_1og')">Zu 1.OG</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_2og')">Zu 2.OG</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_treppe')">Zum Treppenhaus</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_linke_kamine')">Linke Kamine</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_rechte_kamine')">Rechte Kamine</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_linke_kamine')">Zu linke Kamine</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_zu_rechte_kamine')">Zu rechte Kamine</button>
+                    <button class="tool-btn" onclick="addElementToActive('text_baugleich')">Baugleich</button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="canvas-area" id="canvasArea">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">📸</div>
+                <h2>Keine Bilder hochgeladen</h2>
+                <p>Klicke auf "📸 Bilder hochladen" oben, um mehrere Bilder gleichzeitig zu laden. Alle Bilder werden untereinander angezeigt.</p>
+                <button class="btn btn-primary" onclick="document.getElementById('imageUpload').click()">📸 Bilder hochladen</button>
+            </div>
+        </main>
     </div>
 
     <script>
-        // Datum automatisch auf heute setzen
-        function setTodayDate() {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
-        }
+        // ===== GLOBALE VARIABLEN =====
+        let images = [];
+        let activeImageId = null;
+        let eraserModeImageId = null;
+        let selectedElement = { imageId: null, index: -1 };
+        let isDragging = false;
+        let isResizingEndpoint = null; // null, 'start', 'end'
+        let dragStartPos = { x: 0, y: 0 };
+        let dpr = window.devicePixelRatio || 2; // Hohe Auflösung!
 
-        // Datum formatieren (DD.MM.YYYY)
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            const dd = String(date.getDate()).padStart(2, '0');
-            const mm = String(date.getMonth() + 1).padStart(2, '0');
-            const yyyy = date.getFullYear();
-            return `${dd}.${mm}.${yyyy}`;
-        }
+        // ===== FILE UPLOAD =====
+        document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
 
-        // Vorschau aktualisieren
-        function updatePreview() {
-            // Datum
-            const dateValue = document.getElementById('dateInput').value;
-            document.getElementById('prev-date').textContent = 
-                `Augsburg, den ${formatDate(dateValue)}`;
+        function handleImageUpload(e) {
+            const files = Array.from(e.target.files);
+            let processed = 0;
+            const total = files.length;
 
-            // Empfänger - aus einem Textfeld
-            const recipientAddress = document.getElementById('recipientAddress').value;
-            const lines = recipientAddress.split('\n').filter(line => line.trim());
-            
-            let recipientHtml = '';
-            lines.forEach((line, index) => {
-                // Die ersten 3 Zeilen werden fett dargestellt
-                if (index < 3) {
-                    recipientHtml += `<div class="recipient-name">${line}</div>`;
-                } else {
-                    recipientHtml += `<div>${line}</div>`;
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const imageData = {
+                                id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                                name: file.name,
+                                image: img,
+                                elements: [],
+                                history: [],
+                                eraserMode: false
+                            };
+                            images.push(imageData);
+                            processed++;
+                            if (processed === total) {
+                                renderAllImages();
+                                showStatus(`✅ ${total} Bild${total > 1 ? 'er' : ''} hinzugefügt`, 'success');
+                            }
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file.type === 'application/json') {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            loadProjectFromJSON(data);
+                            processed++;
+                        } catch (err) {
+                            showStatus(`❌ Fehler: ${err.message}`, 'error');
+                        }
+                    };
+                    reader.readAsText(file);
                 }
             });
-            
-            document.querySelector('.recipient').innerHTML = recipientHtml;
 
-            // Betreff
-            const subject = document.getElementById('subject').value || 'Betreff';
-            document.getElementById('prev-subject').innerHTML = `<strong>Betreff:</strong> ${subject}`;
-
-            // Brief-Text
-            const bodyText = document.getElementById('bodyText').value;
-            const paragraphs = bodyText.split('\n\n').filter(p => p.trim());
-            
-            let bodyHtml = '';
-            paragraphs.forEach(para => {
-                bodyHtml += `<div class="body-text">${para.replace(/\n/g, '<br>')}</div>`;
-            });
-            
-            document.getElementById('prev-body').innerHTML = bodyHtml;
+            document.getElementById('imageUpload').value = '';
         }
 
-        // Automatische Live-Aktualisierung
-        document.querySelectorAll('input, textarea').forEach(element => {
-            element.addEventListener('input', updatePreview);
+        // ===== ELEMENT CREATION =====
+        function createElementByType(type, canvasWidth, canvasHeight) {
+            const cx = canvasWidth / 2;
+            const cy = canvasHeight / 2;
+            const lineWidth = Math.max(3, canvasWidth / 400);
+            const circleRadius = Math.max(8, canvasWidth / 120);
+            const lineLength = Math.max(100, canvasWidth / 6);
+
+            // Standard-Linien: starten in der oberen linken Ecke und Ende zur Mitte
+            const lineStartX = 80;
+            const lineStartY = 80;
+            const lineEndX = lineStartX + lineLength;
+            const lineEndY = lineStartY + lineLength;
+
+            const templates = {
+                'line_blue_yellow': {
+                    type, x1: lineStartX, y1: lineStartY, x2: lineEndX, y2: lineEndY,
+                    lineColor: '#0066FF', circleColor: '#FFD700', lineWidth, circleRadius
+                },
+                'line_blue_red': {
+                    type, x1: lineStartX, y1: lineStartY, x2: lineEndX, y2: lineEndY,
+                    lineColor: '#0066FF', circleColor: '#FF3030', lineWidth, circleRadius
+                },
+                'line_purple_yellow': {
+                    type, x1: lineStartX, y1: lineStartY, x2: lineEndX, y2: lineEndY,
+                    lineColor: '#9333EA', circleColor: '#FFD700', lineWidth, circleRadius
+                },
+                'line_purple_red': {
+                    type, x1: lineStartX, y1: lineStartY, x2: lineEndX, y2: lineEndY,
+                    lineColor: '#9333EA', circleColor: '#FF3030', lineWidth, circleRadius
+                },
+                'circle_yellow': {
+                    type, x: cx, y: cy, radius: Math.max(20, canvasWidth / 80), color: '#FFD700', lineWidth
+                },
+                'circle_red': {
+                    type, x: cx, y: cy, radius: Math.max(20, canvasWidth / 80), color: '#FF3030', lineWidth
+                },
+                'rect_large_yellow': {
+                    type, x: cx - 40, y: cy - 40, width: 80, height: 80, color: '#FFD700', lineWidth
+                },
+                'gfta_double_red': {
+                    type, x1: cx - 45, y1: cy - 15, width: 35, height: 35, spacing: 10,
+                    color: '#FF3030', lineWidth
+                }
+            };
+
+            // Texte
+            const fontSize = Math.max(18, canvasWidth / 60);
+            const numberFontSize = Math.max(22, canvasWidth / 50);
+
+            // Beschriftungen: rechte Seite vertikal
+            const labels = [
+                ['text_zu_eg', 'Zu EG'],
+                ['text_zu_1og', 'Zu 1.OG'],
+                ['text_zu_2og', 'Zu 2.OG'],
+                ['text_zu_treppe', 'Zum Treppenhaus'],
+                ['text_linke_kamine', 'Linke Kamine'],
+                ['text_rechte_kamine', 'Rechte Kamine'],
+                ['text_zu_linke_kamine', 'Zu linke Kamine'],
+                ['text_zu_rechte_kamine', 'Zu rechte Kamine'],
+                ['text_baugleich', 'Baugleich']
+            ];
+
+            labels.forEach(([id, text]) => {
+                templates[id] = {
+                    type: 'text', text, x: canvasWidth - 200, y: 50,
+                    color: '#FFD700', fontSize
+                };
+            });
+
+            // Nummern: untere Mitte
+            for (let i = 1; i <= 12; i++) {
+                templates[`text_number_${i}`] = {
+                    type: 'text', text: String(i),
+                    x: cx - 15, y: canvasHeight - 40,
+                    color: '#FFD700', fontSize: numberFontSize
+                };
+            }
+
+            return templates[type] ? { ...templates[type] } : null;
+        }
+
+        function addElementToActive(type) {
+            if (!activeImageId) {
+                // Wenn kein Bild aktiv, ersten Bild aktivieren
+                if (images.length > 0) {
+                    activeImageId = images[0].id;
+                    renderAllImages();
+                } else {
+                    showStatus('⚠️ Zuerst Bild hochladen', 'error');
+                    return;
+                }
+            }
+
+            const img = images.find(i => i.id === activeImageId);
+            if (!img) return;
+
+            const elem = createElementByType(type, img.image.width, img.image.height);
+            if (elem) {
+                pushHistory(img);
+                img.elements.push(elem);
+                selectedElement = { imageId: img.id, index: img.elements.length - 1 };
+                redrawImage(img);
+            }
+        }
+
+        function pushHistory(img) {
+            img.history.push(JSON.parse(JSON.stringify(img.elements)));
+            if (img.history.length > 50) img.history.shift();
+        }
+
+        // ===== RENDER ALL IMAGES =====
+        function renderAllImages() {
+            const area = document.getElementById('canvasArea');
+            const empty = document.getElementById('emptyState');
+
+            if (images.length === 0) {
+                area.innerHTML = '';
+                area.appendChild(empty);
+                empty.style.display = 'flex';
+                return;
+            }
+
+            empty.style.display = 'none';
+            area.innerHTML = '';
+
+            images.forEach((img, idx) => {
+                const card = createImageCard(img, idx);
+                area.appendChild(card);
+                setTimeout(() => redrawImage(img), 0);
+            });
+        }
+
+        function createImageCard(img, index) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.dataset.imageId = img.id;
+            card.draggable = false;
+
+            if (img.id === activeImageId) {
+                card.classList.add('active-image');
+            }
+
+            card.innerHTML = `
+                <div class="image-card-header">
+                    <div class="image-card-title">
+                        <div class="drag-handle" data-image-id="${img.id}">⋮⋮</div>
+                        <div class="image-number-badge">${index + 1}</div>
+                        <span>${img.name}</span>
+                    </div>
+                    <div class="image-card-actions">
+                        <button class="btn btn-secondary" onclick="toggleEraser('${img.id}')" id="eraser-${img.id}">
+                            ${img.eraserMode ? '✏️ Normal' : '🧹 Radierer'}
+                        </button>
+                        <button class="btn btn-secondary" onclick="undoLast('${img.id}')">↶</button>
+                        <button class="btn btn-secondary" onclick="saveImage('${img.id}')">💾</button>
+                        <button class="btn btn-secondary" onclick="deleteImage('${img.id}')" style="color: #FF3B30; border-color: #FF3B30;">✕</button>
+                    </div>
+                </div>
+                <div class="image-card-canvas-wrapper" onclick="setActiveImage('${img.id}')">
+                    <canvas id="canvas-${img.id}"></canvas>
+                </div>
+                <div class="image-card-footer">
+                    <span>${img.elements.length} Element${img.elements.length !== 1 ? 'e' : ''}</span>
+                    <span>${img.image.width} × ${img.image.height}px</span>
+                </div>
+            `;
+
+            setupCanvas(card.querySelector('canvas'), img);
+            setupDragAndDrop(card, img);
+
+            return card;
+        }
+
+        function setActiveImage(imageId) {
+            activeImageId = imageId;
+            document.querySelectorAll('.image-card').forEach(c => {
+                c.classList.toggle('active-image', c.dataset.imageId === imageId);
+            });
+        }
+
+        // ===== CANVAS SETUP =====
+        function setupCanvas(canvas, img) {
+            const maxDisplayWidth = 800;
+            const aspectRatio = img.image.height / img.image.width;
+            const displayWidth = Math.min(maxDisplayWidth, img.image.width);
+            const displayHeight = displayWidth * aspectRatio;
+
+            // Hohe Auflösung mit DPR
+            canvas.width = img.image.width;
+            canvas.height = img.image.height;
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // POINTER EVENTS für iPad Pencil
+            canvas.addEventListener('pointerdown', (e) => handlePointerDown(e, img, canvas));
+            canvas.addEventListener('pointermove', (e) => handlePointerMove(e, img, canvas));
+            canvas.addEventListener('pointerup', (e) => handlePointerUp(e, img, canvas));
+            canvas.addEventListener('pointercancel', (e) => handlePointerUp(e, img, canvas));
+
+            // Verhindert Browser-Default
+            canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+            canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        }
+
+        function redrawImage(img) {
+            const canvas = document.getElementById(`canvas-${img.id}`);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Bild zeichnen
+            ctx.drawImage(img.image, 0, 0);
+
+            // Elemente zeichnen
+            img.elements.forEach((elem, idx) => {
+                const isSel = selectedElement.imageId === img.id && selectedElement.index === idx;
+                drawElement(ctx, elem, isSel);
+            });
+        }
+
+        // ===== ELEMENT DRAWING =====
+        function drawElement(ctx, elem, isSelected) {
+            switch (elem.type) {
+                case 'line_blue_yellow':
+                case 'line_blue_red':
+                case 'line_purple_yellow':
+                case 'line_purple_red':
+                    drawLineWithCircle(ctx, elem, isSelected);
+                    break;
+                case 'circle_yellow':
+                case 'circle_red':
+                    drawCircle(ctx, elem, isSelected);
+                    break;
+                case 'rect_large_yellow':
+                    drawRect(ctx, elem, isSelected);
+                    break;
+                case 'gfta_double_red':
+                    drawGFTA(ctx, elem, isSelected);
+                    break;
+                case 'text':
+                    drawText(ctx, elem, isSelected);
+                    break;
+            }
+        }
+
+        function drawLineWithCircle(ctx, elem, isSelected) {
+            // Linie
+            ctx.strokeStyle = elem.lineColor;
+            ctx.lineWidth = elem.lineWidth;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(elem.x1, elem.y1);
+            ctx.lineTo(elem.x2, elem.y2);
+            ctx.stroke();
+
+            // Kreis am Ende (x2, y2)
+            ctx.strokeStyle = elem.circleColor;
+            ctx.lineWidth = elem.lineWidth;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(elem.x2, elem.y2, elem.circleRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Endpunkte anzeigen wenn ausgewählt
+            if (isSelected) {
+                // Start-Punkt (grün)
+                ctx.fillStyle = '#34C759';
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(elem.x1, elem.y1, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // End-Punkt (blau)
+                ctx.fillStyle = '#007AFF';
+                ctx.beginPath();
+                ctx.arc(elem.x2, elem.y2, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        function drawCircle(ctx, elem, isSelected) {
+            ctx.strokeStyle = elem.color;
+            ctx.lineWidth = elem.lineWidth;
+            ctx.beginPath();
+            ctx.arc(elem.x, elem.y, elem.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            if (isSelected) {
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.strokeRect(elem.x - elem.radius - 8, elem.y - elem.radius - 8,
+                    elem.radius * 2 + 16, elem.radius * 2 + 16);
+                ctx.setLineDash([]);
+
+                // Resize handle (right edge)
+                ctx.fillStyle = '#007AFF';
+                ctx.beginPath();
+                ctx.arc(elem.x + elem.radius, elem.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function drawRect(ctx, elem, isSelected) {
+            ctx.strokeStyle = elem.color;
+            ctx.lineWidth = elem.lineWidth;
+            ctx.strokeRect(elem.x, elem.y, elem.width, elem.height);
+
+            if (isSelected) {
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.strokeRect(elem.x - 8, elem.y - 8, elem.width + 16, elem.height + 16);
+                ctx.setLineDash([]);
+
+                drawResizeCorners(ctx, elem.x, elem.y, elem.width, elem.height);
+            }
+        }
+
+        function drawGFTA(ctx, elem, isSelected) {
+            ctx.strokeStyle = elem.color;
+            ctx.lineWidth = elem.lineWidth;
+            ctx.strokeRect(elem.x1, elem.y1, elem.width, elem.height);
+            ctx.strokeRect(elem.x1 + elem.width + elem.spacing, elem.y1, elem.width, elem.height);
+
+            if (isSelected) {
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                const totalWidth = elem.width * 2 + elem.spacing;
+                ctx.strokeRect(elem.x1 - 8, elem.y1 - 8, totalWidth + 16, elem.height + 16);
+                ctx.setLineDash([]);
+
+                drawResizeCorners(ctx, elem.x1, elem.y1, totalWidth, elem.height);
+            }
+        }
+
+        function drawText(ctx, elem, isSelected) {
+            ctx.font = `bold ${elem.fontSize}px -apple-system, Arial`;
+            const textWidth = ctx.measureText(elem.text).width;
+            const padding = 6;
+            const bgX = elem.x - padding;
+            const bgY = elem.y;
+            const bgW = textWidth + padding * 2;
+            const bgH = elem.fontSize + padding * 2;
+
+            // Hintergrund (weiß mit schwarzem Rand)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillRect(bgX, bgY, bgW, bgH);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bgX, bgY, bgW, bgH);
+
+            // Text
+            ctx.fillStyle = elem.color;
+            ctx.textBaseline = 'top';
+            ctx.fillText(elem.text, elem.x, elem.y + padding);
+
+            if (isSelected) {
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.strokeRect(bgX - 4, bgY - 4, bgW + 8, bgH + 8);
+                ctx.setLineDash([]);
+            }
+        }
+
+        function drawResizeCorners(ctx, x, y, w, h) {
+            const corners = [[x + w, y + h]]; // Nur untere rechte Ecke für Resize
+            ctx.fillStyle = '#007AFF';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            corners.forEach(([cx, cy]) => {
+                ctx.beginPath();
+                ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        // ===== HIT DETECTION =====
+        function getPointerPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function getElementAtPoint(img, x, y) {
+            for (let i = img.elements.length - 1; i >= 0; i--) {
+                const elem = img.elements[i];
+                const buffer = 15;
+
+                switch (elem.type) {
+                    case 'line_blue_yellow':
+                    case 'line_blue_red':
+                    case 'line_purple_yellow':
+                    case 'line_purple_red':
+                        // Check endpoints first
+                        if (Math.hypot(x - elem.x1, y - elem.y1) < 20) return { index: i, part: 'start' };
+                        if (Math.hypot(x - elem.x2, y - elem.y2) < 20) return { index: i, part: 'end' };
+                        // Check line
+                        if (pointToLineDistance(x, y, elem.x1, elem.y1, elem.x2, elem.y2) < buffer &&
+                            isPointWithinLineSegment(x, y, elem.x1, elem.y1, elem.x2, elem.y2)) {
+                            return { index: i, part: 'body' };
+                        }
+                        break;
+                    case 'circle_yellow':
+                    case 'circle_red':
+                        // Check resize handle
+                        if (Math.hypot(x - (elem.x + elem.radius), y - elem.y) < 12) {
+                            return { index: i, part: 'resize' };
+                        }
+                        if (Math.hypot(x - elem.x, y - elem.y) <= elem.radius + buffer) {
+                            return { index: i, part: 'body' };
+                        }
+                        break;
+                    case 'rect_large_yellow':
+                        // Check resize corner
+                        if (Math.hypot(x - (elem.x + elem.width), y - (elem.y + elem.height)) < 12) {
+                            return { index: i, part: 'resize' };
+                        }
+                        if (x >= elem.x - buffer && x <= elem.x + elem.width + buffer &&
+                            y >= elem.y - buffer && y <= elem.y + elem.height + buffer) {
+                            return { index: i, part: 'body' };
+                        }
+                        break;
+                    case 'gfta_double_red':
+                        const totalW = elem.width * 2 + elem.spacing;
+                        // Resize handle
+                        if (Math.hypot(x - (elem.x1 + totalW), y - (elem.y1 + elem.height)) < 12) {
+                            return { index: i, part: 'resize' };
+                        }
+                        if (x >= elem.x1 - buffer && x <= elem.x1 + totalW + buffer &&
+                            y >= elem.y1 - buffer && y <= elem.y1 + elem.height + buffer) {
+                            return { index: i, part: 'body' };
+                        }
+                        break;
+                    case 'text':
+                        const ctx = document.getElementById(`canvas-${img.id}`).getContext('2d');
+                        ctx.font = `bold ${elem.fontSize}px -apple-system, Arial`;
+                        const tw = ctx.measureText(elem.text).width;
+                        if (x >= elem.x - 6 && x <= elem.x + tw + 6 &&
+                            y >= elem.y && y <= elem.y + elem.fontSize + 12) {
+                            return { index: i, part: 'body' };
+                        }
+                        break;
+                }
+            }
+            return null;
+        }
+
+        function pointToLineDistance(px, py, x1, y1, x2, y2) {
+            const num = Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1);
+            const den = Math.hypot(y2 - y1, x2 - x1) || 1;
+            return num / den;
+        }
+
+        function isPointWithinLineSegment(px, py, x1, y1, x2, y2) {
+            const minX = Math.min(x1, x2) - 10;
+            const maxX = Math.max(x1, x2) + 10;
+            const minY = Math.min(y1, y2) - 10;
+            const maxY = Math.max(y1, y2) + 10;
+            return px >= minX && px <= maxX && py >= minY && py <= maxY;
+        }
+
+        // ===== SNAP FUNCTION =====
+        function findSnapPoint(img, x, y, ignoreIndex) {
+            const snapRadius = 30;
+            let nearest = null;
+            let minDist = snapRadius;
+
+            img.elements.forEach((elem, idx) => {
+                if (idx === ignoreIndex) return;
+
+                let snapPoints = [];
+
+                switch (elem.type) {
+                    case 'rect_large_yellow':
+                        // 4 corners + center of each edge
+                        snapPoints = [
+                            { x: elem.x, y: elem.y },
+                            { x: elem.x + elem.width, y: elem.y },
+                            { x: elem.x, y: elem.y + elem.height },
+                            { x: elem.x + elem.width, y: elem.y + elem.height },
+                            { x: elem.x + elem.width / 2, y: elem.y },
+                            { x: elem.x + elem.width / 2, y: elem.y + elem.height },
+                            { x: elem.x, y: elem.y + elem.height / 2 },
+                            { x: elem.x + elem.width, y: elem.y + elem.height / 2 }
+                        ];
+                        break;
+                    case 'gfta_double_red':
+                        const tw = elem.width * 2 + elem.spacing;
+                        snapPoints = [
+                            { x: elem.x1, y: elem.y1 },
+                            { x: elem.x1 + tw, y: elem.y1 },
+                            { x: elem.x1, y: elem.y1 + elem.height },
+                            { x: elem.x1 + tw, y: elem.y1 + elem.height },
+                            { x: elem.x1 + tw / 2, y: elem.y1 },
+                            { x: elem.x1 + tw / 2, y: elem.y1 + elem.height }
+                        ];
+                        break;
+                    case 'circle_yellow':
+                    case 'circle_red':
+                        snapPoints = [
+                            { x: elem.x, y: elem.y - elem.radius },
+                            { x: elem.x, y: elem.y + elem.radius },
+                            { x: elem.x - elem.radius, y: elem.y },
+                            { x: elem.x + elem.radius, y: elem.y }
+                        ];
+                        break;
+                    case 'line_blue_yellow':
+                    case 'line_blue_red':
+                    case 'line_purple_yellow':
+                    case 'line_purple_red':
+                        snapPoints = [
+                            { x: elem.x1, y: elem.y1 },
+                            { x: elem.x2, y: elem.y2 }
+                        ];
+                        break;
+                }
+
+                snapPoints.forEach(sp => {
+                    const d = Math.hypot(x - sp.x, y - sp.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        nearest = sp;
+                    }
+                });
+            });
+
+            return nearest;
+        }
+
+        // ===== POINTER HANDLING =====
+        function handlePointerDown(e, img, canvas) {
+            e.preventDefault();
+            canvas.setPointerCapture(e.pointerId);
+
+            setActiveImage(img.id);
+
+            const pos = getPointerPos(e, canvas);
+            dragStartPos = pos;
+
+            // Eraser mode
+            if (img.eraserMode) {
+                const hit = getElementAtPoint(img, pos.x, pos.y);
+                if (hit) {
+                    pushHistory(img);
+                    img.elements.splice(hit.index, 1);
+                    selectedElement = { imageId: null, index: -1 };
+                    redrawImage(img);
+                    updateImageCounter(img);
+                }
+                return;
+            }
+
+            const hit = getElementAtPoint(img, pos.x, pos.y);
+            if (hit) {
+                selectedElement = { imageId: img.id, index: hit.index };
+                isDragging = true;
+                isResizingEndpoint = hit.part === 'start' || hit.part === 'end' || hit.part === 'resize' ? hit.part : null;
+                pushHistory(img);
+            } else {
+                selectedElement = { imageId: null, index: -1 };
+                isDragging = false;
+            }
+            redrawImage(img);
+        }
+
+        function handlePointerMove(e, img, canvas) {
+            if (!isDragging || selectedElement.imageId !== img.id) return;
+            e.preventDefault();
+
+            const pos = getPointerPos(e, canvas);
+            const elem = img.elements[selectedElement.index];
+            if (!elem) return;
+
+            // SNAP
+            const snap = findSnapPoint(img, pos.x, pos.y, selectedElement.index);
+            const finalX = snap ? snap.x : pos.x;
+            const finalY = snap ? snap.y : pos.y;
+
+            if (isResizingEndpoint === 'start') {
+                elem.x1 = finalX;
+                elem.y1 = finalY;
+            } else if (isResizingEndpoint === 'end') {
+                elem.x2 = finalX;
+                elem.y2 = finalY;
+            } else if (isResizingEndpoint === 'resize') {
+                resizeElement(elem, pos.x, pos.y);
+            } else {
+                moveElement(elem, pos.x - dragStartPos.x, pos.y - dragStartPos.y);
+                dragStartPos = pos;
+            }
+
+            redrawImage(img);
+        }
+
+        function handlePointerUp(e, img, canvas) {
+            isDragging = false;
+            isResizingEndpoint = null;
+            try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+            updateImageCounter(img);
+        }
+
+        function moveElement(elem, dx, dy) {
+            switch (elem.type) {
+                case 'line_blue_yellow':
+                case 'line_blue_red':
+                case 'line_purple_yellow':
+                case 'line_purple_red':
+                    elem.x1 += dx;
+                    elem.y1 += dy;
+                    elem.x2 += dx;
+                    elem.y2 += dy;
+                    break;
+                case 'circle_yellow':
+                case 'circle_red':
+                    elem.x += dx;
+                    elem.y += dy;
+                    break;
+                case 'rect_large_yellow':
+                    elem.x += dx;
+                    elem.y += dy;
+                    break;
+                case 'gfta_double_red':
+                    elem.x1 += dx;
+                    elem.y1 += dy;
+                    break;
+                case 'text':
+                    elem.x += dx;
+                    elem.y += dy;
+                    break;
+            }
+        }
+
+        function resizeElement(elem, x, y) {
+            switch (elem.type) {
+                case 'circle_yellow':
+                case 'circle_red':
+                    elem.radius = Math.max(8, Math.hypot(x - elem.x, y - elem.y));
+                    break;
+                case 'rect_large_yellow':
+                    elem.width = Math.max(20, x - elem.x);
+                    elem.height = Math.max(20, y - elem.y);
+                    break;
+                case 'gfta_double_red':
+                    const newTotalW = Math.max(40, x - elem.x1);
+                    elem.width = (newTotalW - elem.spacing) / 2;
+                    elem.height = Math.max(15, y - elem.y1);
+                    break;
+            }
+        }
+
+        function updateImageCounter(img) {
+            const card = document.querySelector(`[data-image-id="${img.id}"]`);
+            if (card) {
+                const footer = card.querySelector('.image-card-footer span:first-child');
+                if (footer) footer.textContent = `${img.elements.length} Element${img.elements.length !== 1 ? 'e' : ''}`;
+            }
+        }
+
+        // ===== BILD-AKTIONEN =====
+        function toggleEraser(imageId) {
+            const img = images.find(i => i.id === imageId);
+            if (!img) return;
+            img.eraserMode = !img.eraserMode;
+            const canvas = document.getElementById(`canvas-${img.id}`);
+            canvas.classList.toggle('eraser-mode', img.eraserMode);
+            const btn = document.getElementById(`eraser-${img.id}`);
+            btn.innerHTML = img.eraserMode ? '✏️ Normal' : '🧹 Radierer';
+            showStatus(img.eraserMode ? '🧹 Radierer aktiv' : '✏️ Normal-Modus', 'info');
+        }
+
+        function undoLast(imageId) {
+            const img = images.find(i => i.id === imageId);
+            if (!img || img.history.length === 0) return;
+            img.elements = img.history.pop();
+            selectedElement = { imageId: null, index: -1 };
+            redrawImage(img);
+            updateImageCounter(img);
+            showStatus('↶ Rückgängig', 'info');
+        }
+
+        function deleteImage(imageId) {
+            if (!confirm('Bild wirklich löschen?')) return;
+            const idx = images.findIndex(i => i.id === imageId);
+            if (idx >= 0) {
+                images.splice(idx, 1);
+                if (activeImageId === imageId) {
+                    activeImageId = images.length > 0 ? images[0].id : null;
+                }
+                renderAllImages();
+                showStatus('🗑️ Bild gelöscht', 'info');
+            }
+        }
+
+        function saveImage(imageId) {
+            const img = images.find(i => i.id === imageId);
+            if (!img) return;
+
+            const basename = img.name.replace(/\.[^/.]+$/, '');
+
+            // JSON
+            const json = {
+                version: '3.0',
+                name: img.name,
+                timestamp: new Date().toISOString(),
+                canvasWidth: img.image.width,
+                canvasHeight: img.image.height,
+                elements: img.elements
+            };
+            downloadFile(JSON.stringify(json, null, 2), `${basename}.json`, 'application/json');
+
+            // JPG (hohe Qualität)
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = img.image.width;
+            exportCanvas.height = img.image.height;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.imageSmoothingEnabled = true;
+            exportCtx.imageSmoothingQuality = 'high';
+            exportCtx.drawImage(img.image, 0, 0);
+            img.elements.forEach(elem => drawElement(exportCtx, elem, false));
+
+            exportCanvas.toBlob(blob => {
+                downloadFile(blob, `${basename}.jpg`, 'image/jpeg');
+                showStatus(`✅ Gespeichert: ${basename}`, 'success');
+            }, 'image/jpeg', 1.0);
+        }
+
+        async function exportAllAsZip() {
+            if (images.length === 0) {
+                showStatus('⚠️ Keine Bilder', 'error');
+                return;
+            }
+
+            showStatus('📦 ZIP wird erstellt...', 'info');
+            const zip = new JSZip();
+
+            for (const img of images) {
+                const basename = img.name.replace(/\.[^/.]+$/, '');
+
+                // JSON
+                const json = {
+                    version: '3.0',
+                    name: img.name,
+                    timestamp: new Date().toISOString(),
+                    canvasWidth: img.image.width,
+                    canvasHeight: img.image.height,
+                    elements: img.elements
+                };
+                zip.file(`${basename}.json`, JSON.stringify(json, null, 2));
+
+                // JPG (hohe Qualität)
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = img.image.width;
+                exportCanvas.height = img.image.height;
+                const exportCtx = exportCanvas.getContext('2d');
+                exportCtx.imageSmoothingEnabled = true;
+                exportCtx.imageSmoothingQuality = 'high';
+                exportCtx.drawImage(img.image, 0, 0);
+                img.elements.forEach(elem => drawElement(exportCtx, elem, false));
+
+                const blob = await new Promise(r => exportCanvas.toBlob(r, 'image/jpeg', 1.0));
+                zip.file(`${basename}.jpg`, blob);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            downloadFile(zipBlob, `Hausbegehung_${new Date().toISOString().slice(0, 10)}.zip`, 'application/zip');
+            showStatus(`✅ ZIP exportiert: ${images.length} Bilder`, 'success');
+        }
+
+        function clearAllImages() {
+            if (!confirm('Wirklich ALLE Bilder löschen?')) return;
+            images = [];
+            activeImageId = null;
+            selectedElement = { imageId: null, index: -1 };
+            renderAllImages();
+            showStatus('🗑️ Alles gelöscht', 'info');
+        }
+
+        function downloadFile(data, filename, mimeType) {
+            const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadProjectFromJSON(data) {
+            console.log('Projekt:', data);
+            showStatus('✅ Projekt geladen', 'success');
+        }
+
+        function showStatus(msg, type) {
+            const bar = document.getElementById('statusBar');
+            bar.textContent = msg;
+            bar.className = `status-${type}`;
+            setTimeout(() => bar.style.display = 'none', 3000);
+        }
+
+        // ===== DRAG & DROP für Bilder umsortieren =====
+        let draggedImageId = null;
+
+        function setupDragAndDrop(card, img) {
+            const handle = card.querySelector('.drag-handle');
+            
+            handle.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                draggedImageId = img.id;
+                card.classList.add('dragging');
+            });
+
+            card.addEventListener('pointerenter', (e) => {
+                if (draggedImageId && draggedImageId !== img.id) {
+                    const rect = card.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    if (e.clientY < midY) {
+                        card.classList.add('drag-over-top');
+                        card.classList.remove('drag-over-bottom');
+                    } else {
+                        card.classList.add('drag-over-bottom');
+                        card.classList.remove('drag-over-top');
+                    }
+                }
+            });
+
+            card.addEventListener('pointerleave', () => {
+                card.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        }
+
+        document.addEventListener('pointerup', (e) => {
+            if (draggedImageId) {
+                const cards = document.querySelectorAll('.image-card');
+                let dropIndex = -1;
+
+                cards.forEach((c, idx) => {
+                    if (c.classList.contains('drag-over-top')) dropIndex = idx;
+                    if (c.classList.contains('drag-over-bottom')) dropIndex = idx + 1;
+                    c.classList.remove('drag-over-top', 'drag-over-bottom', 'dragging');
+                });
+
+                if (dropIndex >= 0) {
+                    const fromIdx = images.findIndex(i => i.id === draggedImageId);
+                    if (fromIdx >= 0 && fromIdx !== dropIndex) {
+                        const [moved] = images.splice(fromIdx, 1);
+                        const insertIdx = dropIndex > fromIdx ? dropIndex - 1 : dropIndex;
+                        images.splice(insertIdx, 0, moved);
+                        renderAllImages();
+                        showStatus('✅ Reihenfolge geändert', 'success');
+                    }
+                }
+                draggedImageId = null;
+            }
         });
-
-        // Beim Laden initialisieren
-        window.onload = function() {
-            setTodayDate();
-            
-            // Beispieldaten laden
-            document.getElementById('recipientAddress').value = `An das
-Amtsgericht Augsburg
-– Beratungshilfestelle –
-Frohsinnstraße 2
-86150 Augsburg`;
-            
-            document.getElementById('subject').value = 'Nachfrage zum Beratungshilfeantrag – Nachforderung gegen Audi Planung GmbH / Az. 3 Ca 1310/24';
-            document.getElementById('bodyText').value = `am 30.09.2025 habe ich beim Amtsgericht Augsburg einen Antrag auf Beratungshilfe gestellt. Der Antrag betrifft eine arbeitsrechtliche Nachforderung von rund 2.863,98 € netto gegen die Audi Planung GmbH, basierend auf dem Vergleich des Arbeitsgerichts Augsburg (Az. 3 Ca 1310/24) vom 05.06.2025.
-
-In diesem Vergleich wurde unter Punkt 3 vereinbart, dass mir meine Vergütung für den Zeitraum 21.05.2024 bis 30.09.2024 "im Nettobetrag ausbezahlt" werden soll. Während der mündlichen Verhandlung am 05.06.2025 wurde vom Gericht ausdrücklich klargestellt, dass dies ohne Abzug von Sozialversicherungsbeiträgen zu erfolgen hat. Diese mündliche Klarstellung habe ich persönlich gehört, und auch mein Rechtsanwalt, Herr Lödler, kann dies bestätigen. Die Klarstellung erfolgte in Anwesenheit aller Verhandlungsbeteiligten, ist jedoch nicht wörtlich im Sitzungsprotokoll dokumentiert.
-
-Mein Rechtsanwalt, Herr Lödler, hat die Lohnabrechnungen der Beklagten überprüft und festgestellt, dass dennoch Sozialversicherungsbeiträge abgezogen wurden. Die von ihm durchgeführte Berechnung ergibt eine Differenz von 2.863,98 € netto (entspricht etwa 810 € pro Monat an zu Unrecht abgezogenen Sozialabgaben).
-
-Da ich bislang keine Rückmeldung zu meinem Antrag auf Beratungshilfe erhalten habe, möchte ich höflich nachfragen, ob mein Antrag bereits bearbeitet wurde oder ob noch Unterlagen benötigt werden.
-
-Ich wäre Ihnen dankbar für eine kurze Rückmeldung, damit ich die Angelegenheit mit meinem Anwalt fortsetzen kann, sobald die Bewilligung der Beratungshilfe vorliegt.
-
-Mit freundlichen Grüßen`;
-            
-            updatePreview();
-        };
     </script>
 </body>
 </html>
