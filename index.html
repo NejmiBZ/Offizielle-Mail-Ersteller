@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Glasfaser Hausbegehung v6.0</title>
+<title>Glasfaser Hausbegehung v7.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ===== MODUL 1: STYLES (CSS) — START ===== */
@@ -202,6 +202,21 @@ canvas.select-mode { cursor: default; }
 @supports (-webkit-touch-callout: none) {
   canvas { touch-action: none !important; }
 }
+
+/* === GEBÄUDE-LABELS-GENERATOR (Modul 13) === */
+.building-row { display: flex; align-items: center; gap: 4px; width: 100%; }
+.building-label-text { font-size: 10px; font-weight: 600; color: #555; white-space: nowrap; flex-shrink: 0; min-width: 70px; }
+.building-spinner { width: 44px; height: 32px; border: 1.5px solid #e8e8ea; border-radius: 7px; text-align: center; font-size: 14px; font-weight: 700; color: #1a1a1a; background: white; outline: none; -webkit-appearance: none; }
+.building-spinner:focus { border-color: #007AFF; }
+.building-insert-btn { width: 100%; padding: 9px; min-height: 38px; border: 1.5px solid #007AFF; border-radius: 9px; background: #EFF6FF; color: #007AFF; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.14s; margin-top: 2px; }
+.building-insert-btn:active { transform: scale(0.97); background: #007AFF; color: white; }
+.building-spacing-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 3px; margin-top: 3px; }
+.spacing-btn { padding: 5px 2px; min-height: 30px; border: 1.5px solid #e8e8ea; border-radius: 7px; background: white; font-size: 12px; font-weight: 700; color: #333; cursor: pointer; transition: all 0.14s; }
+.spacing-btn:active { background: #EFF6FF; border-color: #007AFF; transform: scale(0.95); }
+.building-finish-btn { width: 100%; padding: 8px; min-height: 36px; border: 1.5px solid #34C759; border-radius: 9px; background: #EDFFF2; color: #1A7A35; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.14s; margin-top: 3px; }
+.building-finish-btn:active { transform: scale(0.97); background: #34C759; color: white; }
+#buildingSpacingControls { display: none; }
+#buildingSpacingControls.visible { display: block; }
 /* ===== MODUL 1: STYLES (CSS) — END ===== */
 </style>
 </head>
@@ -214,7 +229,7 @@ canvas.select-mode { cursor: default; }
 <header class="header">
   <div class="header-title">
     <span style="font-size:19px;">🌐</span>
-    <span>Glasfaser v6.0</span>
+    <span>Glasfaser v7.0</span>
   </div>
   <div class="header-address">
     <input type="text" id="addressInput" placeholder="📍 Anschrift (optional)" autocomplete="off">
@@ -273,7 +288,7 @@ canvas.select-mode { cursor: default; }
           <span class="icon-label">Lila</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('line_blue_yellow')" title="Blaue Linie + Gelber Kreis">
-          <svg viewBox="0 0 44 24" fill="none"><line x1="3" y1="20" x2="29" y2="7" stroke="#0066FF" stroke-width="3" stroke-linecap="round"/><circle cx="37" cy="7" r="6.5" stroke="#FFD700" stroke-width="2.5"/></svg>
+          <svg viewBox="0 0 44 24" fill="none"><line x1="3" y1="20" x2="29" y2="7" stroke="#0066FF" stroke-width="3" stroke-linecap="round"/><circle cx="37" cy="7" r="6.5" stroke="#FF9500" stroke-width="2.5"/></svg>
           <span class="icon-label">Blau + 🟡</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('line_blue_red')" title="Blaue Linie + Roter Kreis">
@@ -281,7 +296,7 @@ canvas.select-mode { cursor: default; }
           <span class="icon-label">Blau + 🔴</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('line_purple_yellow')" title="Lila Linie + Gelber Kreis">
-          <svg viewBox="0 0 44 24" fill="none"><line x1="3" y1="20" x2="29" y2="7" stroke="#9333EA" stroke-width="3" stroke-linecap="round"/><circle cx="37" cy="7" r="6.5" stroke="#FFD700" stroke-width="2.5"/></svg>
+          <svg viewBox="0 0 44 24" fill="none"><line x1="3" y1="20" x2="29" y2="7" stroke="#9333EA" stroke-width="3" stroke-linecap="round"/><circle cx="37" cy="7" r="6.5" stroke="#FF9500" stroke-width="2.5"/></svg>
           <span class="icon-label">Lila + 🟡</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('line_purple_red')" title="Lila Linie + Roter Kreis">
@@ -311,7 +326,7 @@ canvas.select-mode { cursor: default; }
       <div class="tool-section-title">Kreise (transparent)</div>
       <div class="tool-grid-2">
         <button class="icon-btn" onclick="addElementToActive('circle_yellow')">
-          <svg viewBox="0 0 40 28" fill="none"><circle cx="20" cy="14" r="10" stroke="#FFD700" stroke-width="3"/></svg>
+          <svg viewBox="0 0 40 28" fill="none"><circle cx="20" cy="14" r="10" stroke="#FF9500" stroke-width="3"/></svg>
           <span class="icon-label">🟡 Kreis</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('circle_red')">
@@ -326,7 +341,7 @@ canvas.select-mode { cursor: default; }
       <div class="tool-section-title">Rechtecke</div>
       <div class="tool-grid-3">
         <button class="icon-btn" onclick="addElementToActive('rect_large_yellow')">
-          <svg viewBox="0 0 40 28" fill="none"><rect x="5" y="4" width="30" height="20" stroke="#FFD700" stroke-width="3" rx="1.5"/></svg>
+          <svg viewBox="0 0 40 28" fill="none"><rect x="5" y="4" width="30" height="20" stroke="#FF9500" stroke-width="3" rx="1.5"/></svg>
           <span class="icon-label">Splitter</span>
         </button>
         <button class="icon-btn" onclick="addElementToActive('gfta_horizontal')">
@@ -368,17 +383,39 @@ canvas.select-mode { cursor: default; }
     <!-- BESCHRIFTUNGEN -->
     <div class="tool-section">
       <div class="tool-section-title">Beschriftungen</div>
-      <div class="tool-grid-1">
+      <div class="tool-grid-2">
         <button class="text-btn" onclick="addElementToActive('text_zu_eg')">Zu EG</button>
         <button class="text-btn" onclick="addElementToActive('text_zu_1og')">Zu 1.OG</button>
         <button class="text-btn" onclick="addElementToActive('text_zu_2og')">Zu 2.OG</button>
-        <button class="text-btn" onclick="addElementToActive('text_zu_treppe')">Zum Treppenhaus</button>
-        <button class="text-btn" onclick="addElementToActive('text_linke_kamine')">Linke Kamine</button>
-        <button class="text-btn" onclick="addElementToActive('text_rechte_kamine')">Rechte Kamine</button>
-        <button class="text-btn" onclick="addElementToActive('text_zu_linke_kamine')">Zu linke Kamine</button>
-        <button class="text-btn" onclick="addElementToActive('text_zu_rechte_kamine')">Zu rechte Kamine</button>
+        <button class="text-btn" onclick="addElementToActive('text_zu_treppe')">Treppe</button>
+        <button class="text-btn" onclick="addElementToActive('text_linke_kamine')">L. Kamine</button>
+        <button class="text-btn" onclick="addElementToActive('text_rechte_kamine')">R. Kamine</button>
+        <button class="text-btn" onclick="addElementToActive('text_zu_linke_kamine')">Zu L.K.</button>
+        <button class="text-btn" onclick="addElementToActive('text_zu_rechte_kamine')">Zu R.K.</button>
         <button class="text-btn" onclick="addElementToActive('text_baugleich')">Baugleich</button>
-        <button class="text-btn text-btn-special" onclick="openTextModal()">✏️ Eigener Text …</button>
+        <button class="text-btn text-btn-special" onclick="openTextModal()" style="grid-column:span 2;">✏️ Eigener Text …</button>
+
+    <!-- GEBÄUDE-LABELS-GENERATOR (Modul 13) -->
+    <div class="tool-section">
+      <div class="tool-section-title">Gebäude-Labels</div>
+      <div class="building-row">
+        <span class="building-label-text">Etagen:</span>
+        <input type="number" class="building-spinner" id="buildingFloors" value="3" min="0" max="10">
+      </div>
+      <div class="building-row" style="margin-top:4px;">
+        <span class="building-label-text">Whg./Etage:</span>
+        <input type="number" class="building-spinner" id="buildingApts" value="2" min="1" max="10">
+      </div>
+      <button class="building-insert-btn" onclick="insertBuildingLabels()">🏢 Labels einfügen</button>
+      <div id="buildingSpacingControls">
+        <div style="font-size:9px;font-weight:700;color:#a0a0a5;text-transform:uppercase;letter-spacing:0.7px;margin:5px 0 3px;padding-bottom:3px;border-bottom:1px solid #f0f0f2;">Abstände</div>
+        <div class="building-spacing-row">
+          <button class="spacing-btn" onclick="adjustBuildingSpacing('h',-1)" title="Horizontaler Abstand kleiner">H−</button>
+          <button class="spacing-btn" onclick="adjustBuildingSpacing('h',1)" title="Horizontaler Abstand größer">H+</button>
+          <button class="spacing-btn" onclick="adjustBuildingSpacing('v',-1)" title="Vertikaler Abstand kleiner">V−</button>
+          <button class="spacing-btn" onclick="adjustBuildingSpacing('v',1)" title="Vertikaler Abstand größer">V+</button>
+        </div>
+        <button class="building-finish-btn" onclick="finalizeBuildingLabels()">✓ Fertig – Labels sperren</button>
       </div>
     </div>
 
@@ -543,10 +580,10 @@ function addAutoNumberElement(img) {
   const fontSize = Math.max(28, Math.min(60, img.image.width / 35));
   img.elements.push({
     type: 'text',
-    text: String(img.autoNumber),
+    text: String(img.autoNumber - 3),
     x: Math.round(img.image.width / 2 - fontSize * 0.3),
     y: Math.round(img.image.height - fontSize * 2.5),
-    color: '#FFD700',
+    color: '#FF9500',
     fontSize,
     isAutoNumber: true
   });
@@ -556,7 +593,7 @@ function updateAutoNumberElements() {
   images.forEach(img => {
     const el = img.elements.find(e => e.isAutoNumber);
     if (el) {
-      el.text = String(img.autoNumber);
+      el.text = String(img.autoNumber - 3);
       redrawImage(img);
     }
   });
@@ -596,21 +633,21 @@ function createElementByType(type, canvasWidth, canvasHeight) {
   const cy = canvasHeight / 2;
   const lineWidth = Math.max(4, canvasWidth / 350);
   const lineLength = Math.max(120, canvasWidth / 5);
-  const lineStartX = 80;
-  const lineStartY = 80;
-  const circleRadius = Math.max(20, canvasWidth / 75);
+  const lineStartX = Math.round(cx - lineLength / 2);
+  const lineStartY = Math.round(cy);
+  const circleRadius = Math.max(8, canvasWidth / 187);
 
   const templates = {
-    'line_blue':   { type:'line', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#0066FF', lineWidth },
-    'line_purple': { type:'line', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#9333EA', lineWidth },
-    'line_blue_yellow':   { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#0066FF', circleColor:'#FFD700', circleRadius, lineWidth },
-    'line_blue_red':      { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#0066FF', circleColor:'#FF3030', circleRadius, lineWidth },
-    'line_purple_yellow': { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#9333EA', circleColor:'#FFD700', circleRadius, lineWidth },
-    'line_purple_red':    { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY+lineLength, color:'#9333EA', circleColor:'#FF3030', circleRadius, lineWidth },
-    'circle_yellow': { type:'circle', x:cx, y:cy, radius:Math.max(25,canvasWidth/70), color:'#FFD700', lineWidth },
-    'circle_red':    { type:'circle', x:cx, y:cy, radius:Math.max(25,canvasWidth/70), color:'#FF3030', lineWidth },
+    'line_blue':   { type:'line', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#0066FF', lineWidth },
+    'line_purple': { type:'line', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#9333EA', lineWidth },
+    'line_blue_yellow':   { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#0066FF', circleColor:'#FF9500', circleRadius, lineWidth },
+    'line_blue_red':      { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#0066FF', circleColor:'#FF3030', circleRadius, lineWidth },
+    'line_purple_yellow': { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#9333EA', circleColor:'#FF9500', circleRadius, lineWidth },
+    'line_purple_red':    { type:'line_circle', x1:lineStartX, y1:lineStartY, x2:lineStartX+lineLength, y2:lineStartY, color:'#9333EA', circleColor:'#FF3030', circleRadius, lineWidth },
+    'circle_yellow': { type:'circle', x:cx, y:cy, radius:Math.max(10,canvasWidth/175), color:'#FF9500', lineWidth },
+    'circle_red':    { type:'circle', x:cx, y:cy, radius:Math.max(10,canvasWidth/175), color:'#FF3030', lineWidth },
     // Splitter: Standardgröße 150% (120×120)
-    'rect_large_yellow': { type:'rect', x:cx-SPLITTER_SIZE/2, y:cy-SPLITTER_SIZE/2, width:SPLITTER_SIZE, height:SPLITTER_SIZE, color:'#FFD700', lineWidth },
+    'rect_large_yellow': { type:'rect', x:cx-SPLITTER_SIZE/2, y:cy-SPLITTER_SIZE/2, width:SPLITTER_SIZE, height:SPLITTER_SIZE, color:'#FF9500', lineWidth },
     // GFTA: zwei separate Rechtecke
     'gfta_horizontal': { type:'gfta', x1:cx-45, y1:cy-20, width:38, height:38, spacing:12, color:'#FF3030', lineWidth, rotation:0 },
     'gfta_vertical':   { type:'gfta', x1:cx-20, y1:cy-45, width:38, height:38, spacing:12, color:'#FF3030', lineWidth, rotation:90 }
@@ -624,15 +661,17 @@ function createElementByType(type, canvasWidth, canvasHeight) {
     ['text_rechte_kamine','Rechte Kamine'],['text_zu_linke_kamine','Zu linke Kamine'],
     ['text_zu_rechte_kamine','Zu rechte Kamine'],['text_baugleich','Baugleich']
   ];
-  labels.forEach(([id,text]) => { templates[id] = { type:'text', text, x:canvasWidth-260, y:50, color:'#FFD700', fontSize }; });
+  labels.forEach(([id,text]) => { templates[id] = { type:'text', text, x:Math.round(cx-60), y:Math.round(cy-fontSize/2), color:'#FF9500', fontSize }; });
   for (let i=1; i<=12; i++) {
-    templates[`text_number_${i}`] = { type:'text', text:String(i), x:cx-15, y:canvasHeight-80, color:'#FFD700', fontSize:numberFontSize };
+    templates[`text_number_${i}`] = { type:'text', text:String(i), x:cx-15, y:canvasHeight-80, color:'#FF9500', fontSize:numberFontSize };
   }
 
   return templates[type] ? { ...templates[type] } : null;
 }
 
 function addElementToActive(type) {
+  // Pencil-Modus beenden (inkl. Button deaktivieren)
+  if (pencilMode) cancelDrawing();
   // Eraser deaktivieren wenn Drawing-Tool gewählt
   deactivateAllErasers();
   // Auswahl-Tool deaktivieren
@@ -681,7 +720,7 @@ function addCustomText() {
   if (!img) return;
   const fontSize = Math.max(22, img.image.width / 50);
   pushHistory(img);
-  img.elements.push({ type:'text', text, x:img.image.width-260, y:50, color:'#FFD700', fontSize });
+  img.elements.push({ type:'text', text, x:Math.round(img.image.width/2-60), y:Math.round(img.image.height/2-fontSize/2), color:'#FF9500', fontSize });
   selectedElement = { imageId: img.id, index: img.elements.length - 1 };
   redrawImage(img);
   renderPageOverviewDebounced();
@@ -729,7 +768,7 @@ function renderAllImages() {
 }
 
 function createImageCard(img, index) {
-  if (!zoomLevels[img.id]) zoomLevels[img.id] = 1.0;
+  if (!zoomLevels[img.id]) zoomLevels[img.id] = 0.75;
   const card = document.createElement('div');
   card.className = 'image-card' + (img.id === activeImageId ? ' active-image' : '');
   card.dataset.imageId = img.id;
@@ -1134,6 +1173,12 @@ function handlePointerDown(e, img, canvas) {
   // AUSWAHL: Element antippen → auswählen + × zeigen
   const hit = getElementAtPoint(img, pos.x, pos.y);
   if (hit) {
+    const hitElem = img.elements[hit.index];
+    const isTextElem = hitElem && hitElem.type === 'text';
+    // Nicht-Text-Elemente: NUR im Auswahl-Cursor-Modus selektierbar
+    if (!isTextElem && !selectToolActive) {
+      deselectElement(); hideDeleteOverlay(); isDragging = false; return;
+    }
     // Wenn anderes Bild war selektiert: deselektieren
     if (selectedElement.imageId && selectedElement.imageId !== img.id) {
       const oldImg = images.find(i => i.id === selectedElement.imageId);
@@ -1144,7 +1189,6 @@ function handlePointerDown(e, img, canvas) {
     isResizingEndpoint = (hit.part==='start'||hit.part==='end'||hit.part==='resize'||hit.part.startsWith('point_')) ? hit.part : null;
     pushHistory(img);
     redrawImage(img);
-    // × Button zeigen (immer, nicht nur im Auswahl-Tool)
     showDeleteOverlay(img, hit.index, canvas);
   } else {
     deselectElement();
@@ -1313,6 +1357,8 @@ function startPencilDraw(color) {
     if (images.length>0) activeImageId=images[0].id;
     else { showStatus('⚠️ Zuerst Bild hochladen','error'); return; }
   }
+  // Alle Pencil-Buttons erst deaktivieren, dann den neuen aktivieren
+  document.querySelectorAll('[id^="pencil-btn-"]').forEach(btn => btn.classList.remove('active'));
   pencilMode = { color, points:[], imageId:activeImageId, currentPos:null, pointHistory:[] };
   document.getElementById('drawingBanner').classList.add('active');
   const canvas = document.getElementById(`canvas-${activeImageId}`);
@@ -1619,7 +1665,7 @@ function saveImage(imageId) {
   const img=images.find(i=>i.id===imageId);
   if(!img) return;
   const basename=img.name.replace(/\.[^/.]+$/,'');
-  const json={version:'6.0',name:img.name,timestamp:new Date().toISOString(),canvasWidth:img.image.width,canvasHeight:img.image.height,elements:img.elements};
+  const json={version:'7.0',name:img.name,timestamp:new Date().toISOString(),canvasWidth:img.image.width,canvasHeight:img.image.height,elements:img.elements};
   downloadFile(JSON.stringify(json,null,2),`${basename}.json`,'application/json');
   const exportCanvas=buildExportCanvas(img);
   exportCanvas.toBlob(blob=>{downloadFile(blob,`${basename}.jpg`,'image/jpeg');showStatus(`✅ Gespeichert: ${basename}`,'success');},'image/jpeg',1.0);
@@ -1692,7 +1738,7 @@ async function exportSelectedAsZip() {
   const zip=new JSZip();
   for(const img of toExport){
     const basename=img.name.replace(/\.[^/.]+$/,'');
-    const json={version:'6.0',name:img.name,timestamp:new Date().toISOString(),canvasWidth:img.image.width,canvasHeight:img.image.height,elements:img.elements};
+    const json={version:'7.0',name:img.name,timestamp:new Date().toISOString(),canvasWidth:img.image.width,canvasHeight:img.image.height,elements:img.elements};
     zip.file(`${basename}.json`,JSON.stringify(json,null,2));
     const ec=buildExportCanvas(img);
     const blob=await new Promise(r=>ec.toBlob(r,'image/jpeg',1.0));
@@ -1726,6 +1772,138 @@ function showStatus(msg, type) {
   bar._t=setTimeout(()=>{bar.style.display='none';bar.className='';},3500);
 }
 // ===== MODUL 11: EXPORT/IMPORT — END =====
+
+// ===== MODUL 13: GEBÄUDE-LABELS — START =====
+let activeBuildingGroupId = null;
+
+function insertBuildingLabels() {
+  if (!activeImageId) {
+    if (images.length > 0) activeImageId = images[0].id;
+    else { showStatus('⚠️ Zuerst Bild hochladen', 'error'); return; }
+  }
+  const img = images.find(i => i.id === activeImageId);
+  if (!img) return;
+
+  const floors = parseInt(document.getElementById('buildingFloors').value) || 0;
+  const aptsPerFloor = parseInt(document.getElementById('buildingApts').value) || 1;
+
+  // Gebäude-Gruppe: vorherige Gruppe entfernen wenn vorhanden
+  if (activeBuildingGroupId) {
+    img.elements = img.elements.filter(e => e.buildingGroupId !== activeBuildingGroupId);
+  }
+  pushHistory(img);
+
+  const groupId = 'bg_' + Date.now();
+  activeBuildingGroupId = groupId;
+
+  const fontSize = Math.max(18, img.image.width / 60);
+  const cx = img.image.width / 2;
+  const cy = img.image.height / 2;
+
+  // Standard-Abstände
+  const hGap = Math.round(fontSize * 3.5);   // Horizontaler Abstand zwischen Spalten
+  const vGap = Math.round(fontSize * 1.8);   // Vertikaler Abstand zwischen Zeilen
+
+  // Zeilen aufbauen (von unten nach oben: Keller, EG, 1.OG, 2.OG, ...)
+  const rows = [];
+  // Keller-Zeile (99S1, 99S2, ...)
+  rows.push({ prefix: '99S', type: 'keller' });
+  // EG (0001, 0002, ...)
+  rows.push({ prefix: '00', type: 'eg' });
+  // OG-Etagen
+  for (let f = 1; f <= floors; f++) {
+    rows.push({ prefix: String(f).padStart(2,'0'), type: 'og' });
+  }
+
+  // Gesamthöhe und -breite berechnen
+  const totalRows = rows.length;
+  const totalCols = aptsPerFloor;
+  const startX = Math.round(cx - (totalCols - 1) * hGap / 2);
+  const startY = Math.round(cy - (totalRows - 1) * vGap / 2);
+
+  rows.forEach((row, rowIdx) => {
+    // Zeilen von oben = höchste OG, unten = Keller
+    const y = startY + (totalRows - 1 - rowIdx) * vGap;
+    for (let col = 0; col < aptsPerFloor; col++) {
+      let label;
+      if (row.type === 'keller') {
+        label = '99S' + String(col + 1);
+      } else if (row.type === 'eg') {
+        label = '00' + String(col + 1).padStart(2, '0');
+      } else {
+        label = row.prefix + String(col + 1).padStart(2, '0');
+      }
+      const x = startX + col * hGap;
+      img.elements.push({
+        type: 'text',
+        text: label,
+        x: Math.round(x),
+        y: Math.round(y),
+        color: '#FF9500',
+        fontSize,
+        isBuilding: true,
+        buildingGroupId: groupId,
+        buildingLocked: false
+      });
+    }
+  });
+
+  redrawImage(img);
+  renderPageOverviewDebounced();
+  updateImageCounter(img);
+
+  // Abstandssteuerung anzeigen
+  document.getElementById('buildingSpacingControls').classList.add('visible');
+  showStatus(`🏢 ${img.elements.filter(e=>e.buildingGroupId===groupId).length} Labels eingefügt`, 'success');
+}
+
+function adjustBuildingSpacing(axis, direction) {
+  if (!activeBuildingGroupId || !activeImageId) return;
+  const img = images.find(i => i.id === activeImageId);
+  if (!img) return;
+
+  const group = img.elements.filter(e => e.buildingGroupId === activeBuildingGroupId);
+  if (group.length === 0) return;
+
+  // Mittelpunkt der Gruppe finden
+  const xs = group.map(e => e.x);
+  const ys = group.map(e => e.y);
+  const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+  const step = Math.max(8, group[0].fontSize * 0.3);
+
+  group.forEach(e => {
+    if (axis === 'h') {
+      const offsetX = e.x - centerX;
+      e.x = Math.round(centerX + offsetX + direction * step * Math.sign(offsetX || 0.001));
+    } else {
+      const offsetY = e.y - centerY;
+      e.y = Math.round(centerY + offsetY + direction * step * Math.sign(offsetY || 0.001));
+    }
+  });
+
+  redrawImage(img);
+}
+
+function finalizeBuildingLabels() {
+  if (!activeBuildingGroupId || !activeImageId) return;
+  const img = images.find(i => i.id === activeImageId);
+  if (!img) return;
+
+  // Gruppe sperren: jedes Label einzeln verschiebbar (isBuilding bleibt, buildingGroupId entfernen)
+  img.elements.forEach(e => {
+    if (e.buildingGroupId === activeBuildingGroupId) {
+      e.buildingLocked = true;
+      delete e.buildingGroupId;  // Ab jetzt individuell
+    }
+  });
+
+  activeBuildingGroupId = null;
+  document.getElementById('buildingSpacingControls').classList.remove('visible');
+  showStatus('✅ Gebäude-Labels gesperrt — jetzt einzeln verschiebbar', 'success');
+}
+// ===== MODUL 13: GEBÄUDE-LABELS — END =====
 
 // ===== MODUL 12: INITIALISIERUNG — START =====
 renderPageOverview();
